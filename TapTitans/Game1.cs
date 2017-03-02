@@ -32,8 +32,9 @@ namespace TapTitans
         List<Upgrade> upgradeList = new List<Upgrade>();
         List<Enemy> enemyList = new List<Enemy>();
 
-
-
+        int do_zabicia = 10;
+        int hp_ = 13;
+        int _hp = 15;
 
 
 
@@ -53,7 +54,7 @@ namespace TapTitans
         Texture2D bgT;
         Texture2D cursorT;
         Texture2D enemyT;
-        
+        Texture2D healthT;
         
         SpriteFont font,fontS;
 
@@ -92,22 +93,70 @@ namespace TapTitans
         }
         private void AddEnemy()
         {
+
             string[] nazwy =
             {
                 "Blob",
                 "Inny syf",
                 "Cwel"
             };
+            string[] nazwyBossow =
+            {
+                "Glutang",
+                "Ape",
+                "Kozak"
+            };
 
-            int los = random.Next(0, nazwy.Length);
-            float hape = random.Next(10, 15);
-            int lewel = poziom.CURRENT_WORLD_LVL;
+            if (poziom.CURRENT_WORLD_LVL % 5 == 0)
+            {
+                int los = random.Next(0, nazwyBossow.Length);
+                _hp += 23;
+                hp_ += 23;
+                float hape = random.Next(hp_ + 40, _hp + 40);
+                
+                int lewel = poziom.CURRENT_WORLD_LVL;
 
-            Enemy e = new Enemy(nazwy[los], hape, hape, 2, 10, lewel, 0);
-            e.HP *= e.LVL + 0.5f;
-            e.MAXHP *= e.LVL + 0.5f;
-            e.DEFENCE *= e.LVL + 0.5f;
-            enemyList.Add(e);
+                Enemy e = new Enemy(nazwyBossow[los], hape, hape, 40, 150, lewel, 0);
+                e.HP *= e.LVL + 0.2f;
+                e.MAXHP *= e.LVL + 0.2f;
+                e.DEFENCE *= e.LVL + 0.5f;
+                e.GOLD_MIN *= e.LVL;
+                e.GOLD_MAX *= e.LVL;
+                enemyList.Add(e);
+
+                poziom.TO_KILL = 0;
+            }
+            else
+            {
+                
+
+                int los = random.Next(0, nazwy.Length);
+                
+                float hape = random.Next(10, 13);
+                
+                int lewel = poziom.CURRENT_WORLD_LVL;
+
+                if (lewel > 5)
+                    hape = random.Next(hp_, _hp);
+
+                var k = random.Next(1, 11);
+                if(k==3)
+                {
+                    hp_--;
+                    _hp--;
+                }
+
+                Enemy e = new Enemy(nazwy[los], hape, hape, 2, 7, lewel, 0);
+                e.HP *= e.LVL + 0.7f;
+                e.MAXHP *= e.LVL + 0.7f;
+                e.DEFENCE *= e.LVL + 0.5f;
+                e.GOLD_MIN *= e.LVL;
+                e.GOLD_MAX *= e.LVL;
+                enemyList.Add(e);
+
+                poziom.TO_KILL = do_zabicia;
+            }
+            
         }
         private void OnKill()
         {
@@ -121,7 +170,6 @@ namespace TapTitans
                 points += (float)srednia;
                 enemyList.Remove(x);
             });
-
 
 
             poziom.KILLED++;
@@ -153,9 +201,18 @@ namespace TapTitans
         private void AddUpgrades()
         {
             Upgrade[] up = {
-                new Upgrade(new Rectangle(bg.X + 130,bg.Y + 100,160,32), 10, 1.3f, 0.2f),
-                new Upgrade(new Rectangle(bg.X + 130,bg.Y + 150,160,32), 100, 4, 1),
-                new Upgrade(new Rectangle(bg.X + 130,bg.Y + 200,160,32), 1500, 12, 9),
+                new Upgrade(new Rectangle(bg.X + 130,bg.Y + 100,160,32), 
+                            10,     //CENA
+                            1.3f,   //DAMAGE
+                            0.2f),  //DAMAGE_OVER_TIME
+                new Upgrade(new Rectangle(bg.X + 130,bg.Y + 150,160,32), 
+                            500,    //CENA
+                            6,      //DAMAGE
+                            1),     //DAMAGE_OVER_TIME
+                new Upgrade(new Rectangle(bg.X + 130,bg.Y + 200,160,32), 
+                            3140,   //CENA
+                            12,     //DAMAGE
+                            9),     //DAMAGE_OVER_TIME
             };
 
             upgradeList.AddRange(up);
@@ -196,7 +253,7 @@ namespace TapTitans
 
         protected override void Initialize()
         {
-
+            
 
             base.Initialize();
         }
@@ -220,6 +277,8 @@ namespace TapTitans
 
             bg = new Rectangle(0, 50, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight - 50);
             bgT = Content.Load<Texture2D>("bg");
+
+            healthT = Content.Load<Texture2D>("health");
 
             font = Content.Load<SpriteFont>("font");
             fontS = Content.Load<SpriteFont>("fontS");
@@ -251,6 +310,8 @@ namespace TapTitans
                 state = State.SHOP;
             if (Klik(Keys.A))
                 points += 200;
+            if (Klik(Keys.D))
+                OnKill();
 
             switch(state)
             {
@@ -316,7 +377,7 @@ namespace TapTitans
             
             // sb.Draw(cursorT, cursor, Color.White);
 
-            
+             
            
 
             switch(state)
@@ -327,6 +388,12 @@ namespace TapTitans
 
                     foreach (var x in enemyList)
                     {
+                        float szerokosc = healthT.Width * x.HPPERCENT;
+                        sb.Draw(healthT, new Rectangle(enemyRect.X, enemyRect.Y - 33, 128, 20), Color.Gray);
+                        Rectangle healthBarR = new Rectangle(enemyRect.X, enemyRect.Y - 33, (int)szerokosc, 20);
+                        sb.Draw(healthT, healthBarR, Color.IndianRed);
+                        
+
                         sb.DrawString(font, "    " + x.NAME + "\nHP " + FormatNumber((long)x.HP) + "/" + FormatNumber((long) x.MAXHP), new Vector2(320, 150), Color.Black);
                     }
                     break;
@@ -348,7 +415,11 @@ namespace TapTitans
                     break;
             }
 
-            sb.DrawString(font, string.Format("Points {0}\nDamage {1}\nDamage over time {2}", FormatNumber(points), FormatNumber(damage), FormatNumber(damage_over_time)), Vector2.Zero, Color.Black);
+            
+
+
+
+            sb.DrawString(font, string.Format("Points {0}\nDamage {1}\nDamage over time {2}\n{3}/{4}", FormatNumber(points), FormatNumber(damage), FormatNumber(damage_over_time), hp_, _hp), Vector2.Zero, Color.Black);
             sb.DrawString(font, string.Format("Current world {0}\nKilled {1}/{2}", poziom.CURRENT_WORLD_LVL, poziom.KILLED, poziom.TO_KILL), new Vector2(300, 0), Color.Black);
             sb.Draw(cursorT, cursorX, Color.White);
             sb.End();

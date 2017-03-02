@@ -15,6 +15,8 @@ namespace TapTitans
         public float GOLD_MAX { get; set; } = 0;
         public int LVL { get; set; } = 0;
         public float DEFENCE { get; set; } = 0;
+        public float HP_PERCENT { get; set; } = 0;
+        public float HPPERCENT { get { return HP / MAXHP; } }
 
 
         Random random = new Random();
